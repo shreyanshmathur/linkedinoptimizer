@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    font-family: 'Inter', sans-serif;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0a0f1a 0%, #1a1f2e 50%, #0d1117 100%);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(10, 102, 194, 0.5);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(10, 102, 194, 0.7);
+}
+
+/* Score ring animation */
+@keyframes drawScore {
+    from {
+        stroke-dashoffset: 282.7;
+    }
+}
+
+.score-ring {
+    animation: drawScore 1.5s ease-out forwards;
+}
+
+/* Gradient text */
+.gradient-text {
+    background: linear-gradient(135deg, #0a66c2 0%, #36aaf5 50%, #7cc8fb 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Glass effect */
+.glass {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-dark {
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Heatmap zones */
+.heatmap-critical {
+    background: rgba(239, 68, 68, 0.3);
+    border: 2px solid rgba(239, 68, 68, 0.6);
+}
+
+.heatmap-important {
+    background: rgba(249, 115, 22, 0.25);
+    border: 2px solid rgba(249, 115, 22, 0.5);
+}
+
+.heatmap-moderate {
+    background: rgba(234, 179, 8, 0.2);
+    border: 2px solid rgba(234, 179, 8, 0.4);
+}
+
+.heatmap-low {
+    background: rgba(34, 197, 94, 0.15);
+    border: 2px solid rgba(34, 197, 94, 0.3);
+}
+
+/* Pulse animation for live updates */
+.pulse-update {
+    animation: pulse 0.5s ease-out;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Achievement unlock animation */
+.achievement-unlock {
+    animation: unlockBadge 0.8s ease-out;
+}
+
+@keyframes unlockBadge {
+    0% {
+        transform: scale(0) rotate(-180deg);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.3) rotate(0deg);
+    }
+
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+/* XP bar animation */
+.xp-fill {
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Card hover effects */
+.card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(10, 102, 194, 0.2);
+}
+
+/* Section tabs */
+.tab-active {
+    background: linear-gradient(135deg, rgba(10, 102, 194, 0.2) 0%, rgba(54, 170, 245, 0.1) 100%);
+    border-color: rgba(10, 102, 194, 0.5);
+}
+
+/* Suggestion card */
+.suggestion-card {
+    transition: all 0.3s ease;
+}
+
+.suggestion-card:hover {
+    border-color: rgba(10, 102, 194, 0.5);
+    box-shadow: 0 0 20px rgba(10, 102, 194, 0.2);
+}
+
+/* Accept button glow */
+.accept-glow {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+}
+
+/* Drag and drop */
+.dragging {
+    opacity: 0.5;
+    transform: scale(1.02);
+}
+
+.drop-target {
+    border: 2px dashed rgba(10, 102, 194, 0.5);
+    background: rgba(10, 102, 194, 0.1);
+}
