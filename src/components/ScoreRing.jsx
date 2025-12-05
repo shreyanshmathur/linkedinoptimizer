@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 export default function ScoreRing({ score, size = 120, strokeWidth = 10 }) {
     const radius = (size - strokeWidth) / 2;
@@ -23,6 +24,13 @@ export default function ScoreRing({ score, size = 120, strokeWidth = 10 }) {
                         <stop offset="0%" stopColor={getColor()} stopOpacity="1" />
                         <stop offset="100%" stopColor={getColor()} stopOpacity="0.6" />
                     </linearGradient>
+                    <filter id="glow">
+                        <feGaussianBlur stdDeviation="3.5" result="coloredBlur" />
+                        <feMerge>
+                            <feMergeNode in="coloredBlur" />
+                            <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                    </filter>
                 </defs>
 
                 {/* Background circle */}
@@ -31,12 +39,13 @@ export default function ScoreRing({ score, size = 120, strokeWidth = 10 }) {
                     cy={size / 2}
                     r={radius}
                     fill="none"
-                    stroke="rgba(255, 255, 255, 0.1)"
+                    stroke="currentColor"
                     strokeWidth={strokeWidth}
+                    className="text-gray-200 dark:text-white/10"
                 />
 
                 {/* Score circle */}
-                <circle
+                <motion.circle
                     cx={size / 2}
                     cy={size / 2}
                     r={radius}
@@ -44,24 +53,35 @@ export default function ScoreRing({ score, size = 120, strokeWidth = 10 }) {
                     stroke={`url(#${getGradientId()})`}
                     strokeWidth={strokeWidth}
                     strokeDasharray={circumference}
-                    strokeDashoffset={offset}
+                    strokeDashoffset={circumference}
+                    animate={{ strokeDashoffset: offset }}
+                    transition={{ duration: 1.5, ease: "easeOut" }}
                     strokeLinecap="round"
-                    className="score-ring transition-all duration-1000 ease-out"
                     style={{
-                        filter: `drop-shadow(0 0 10px ${getColor()}50)`
+                        filter: `drop-shadow(0 0 8px ${getColor()}60)`
                     }}
                 />
             </svg>
 
             {/* Score text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span
+                <motion.span
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.5, duration: 0.5 }}
                     className="text-4xl font-bold"
                     style={{ color: getColor() }}
                 >
                     {score}
-                </span>
-                <span className="text-sm text-gray-400">/100</span>
+                </motion.span>
+                <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.8 }}
+                    className="text-sm text-gray-400 dark:text-gray-500"
+                >
+                    /100
+                </motion.span>
             </div>
         </div>
     );

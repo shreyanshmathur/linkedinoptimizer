@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check, Sparkles, Crown, Zap, Star, Shield } from 'lucide-react';
+import { X, Check, Sparkles, Crown, Zap, Star, Shield, Lock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { RAZORPAY_KEY_ID } from '../../firebase/config';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -184,142 +184,168 @@ export default function PaywallModal({ isOpen, onClose, type = 'analysis' }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="relative w-full max-w-4xl bg-gray-900 rounded-3xl overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in">
+            <div className="relative w-full max-w-5xl bg-[#0f1115] rounded-3xl overflow-hidden max-h-[90vh] overflow-y-auto border border-white/10 shadow-2xl">
+                {/* Background Glow */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-gradient-to-b from-yellow-500/10 to-transparent blur-3xl pointer-events-none" />
+
                 {/* Close button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
+                    className="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors z-10 text-gray-400 hover:text-white"
                 >
                     <X className="w-5 h-5" />
                 </button>
 
-                {/* Header */}
-                <div className="relative px-8 pt-8 pb-6 text-center bg-gradient-to-b from-linkedin-600/20 to-transparent">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500/20 rounded-full text-yellow-400 text-sm font-semibold mb-4">
-                        <Crown className="w-4 h-4" />
-                        UPGRADE TO PRO
-                    </div>
-                    <h2 className="text-3xl font-bold mb-2">
-                        {type === 'analysis'
-                            ? "You've used all 3 free analyses"
-                            : "You've used all 3 free exports"
-                        }
-                    </h2>
-                    <p className="text-gray-400">
-                        Unlock unlimited access to supercharge your LinkedIn profile
-                    </p>
-                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
+                    {/* Left Side: Value Prop */}
+                    <div className="lg:col-span-5 p-8 lg:p-12 bg-gradient-to-br from-gray-900 to-black border-r border-white/5 relative overflow-hidden">
+                        <div className="relative z-10">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-full text-yellow-500 text-xs font-bold tracking-wider mb-8">
+                                <Crown className="w-3 h-3" />
+                                PREMIUM ACCESS
+                            </div>
 
-                {/* Plans */}
-                <div className="px-8 pb-8">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {PLANS.map((plan) => (
-                            <div
-                                key={plan.id}
-                                onClick={() => setSelectedPlan(plan.id)}
-                                className={`relative p-6 rounded-2xl cursor-pointer transition-all ${selectedPlan === plan.id
-                                        ? 'border-2 border-linkedin-500 bg-linkedin-500/10'
-                                        : 'border border-white/10 bg-white/5 hover:border-white/30'
-                                    } ${plan.popular ? 'ring-2 ring-yellow-500/50' : ''}`}
-                            >
-                                {/* Popular badge */}
-                                {plan.popular && (
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full text-xs font-bold text-black">
-                                        MOST POPULAR
+                            <h2 className="text-4xl font-bold mb-6 text-white leading-tight">
+                                Unlock Your <br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
+                                    Career Potential
+                                </span>
+                            </h2>
+
+                            <div className="space-y-6 mb-12">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 flex items-center justify-center flex-shrink-0 border border-yellow-500/20">
+                                        <Zap className="w-5 h-5 text-yellow-500" />
                                     </div>
-                                )}
-
-                                {/* Best value badge */}
-                                {plan.badge && (
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full text-xs font-bold text-black">
-                                        {plan.badge}
+                                    <div>
+                                        <h3 className="font-semibold text-white mb-1">Unlimited AI Analysis</h3>
+                                        <p className="text-sm text-gray-400">Get instant feedback on every profile update without limits.</p>
                                     </div>
-                                )}
-
-                                {/* Discount badge */}
-                                <div className="inline-block px-2 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded mb-3">
-                                    {plan.discount}
                                 </div>
-
-                                <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-
-                                {/* Price */}
-                                <div className="mb-4">
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="text-3xl font-bold">₹{plan.price.toLocaleString()}</span>
-                                        <span className="text-gray-500">/{plan.period}</span>
+                                <div className="flex items-start gap-4">
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center flex-shrink-0 border border-blue-500/20">
+                                        <Star className="w-5 h-5 text-blue-400" />
                                     </div>
-                                    <div className="text-sm text-gray-500 line-through">
-                                        ₹{plan.originalPrice.toLocaleString()}
+                                    <div>
+                                        <h3 className="font-semibold text-white mb-1">Top 1% Ranking</h3>
+                                        <p className="text-sm text-gray-400">Advanced strategies to outrank competitors in recruiter searches.</p>
                                     </div>
-                                    {plan.monthlyEquivalent && (
-                                        <div className="text-sm text-green-400">
-                                            Just ₹{plan.monthlyEquivalent}/month
+                                </div>
+                                <div className="flex items-start gap-4">
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center flex-shrink-0 border border-purple-500/20">
+                                        <Lock className="w-5 h-5 text-purple-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-white mb-1">Unlock All Features</h3>
+                                        <p className="text-sm text-gray-400">Access resume export, deep analysis, and premium templates.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
+                                <div className="flex -space-x-2">
+                                    {[1, 2, 3, 4].map(i => (
+                                        <div key={i} className="w-8 h-8 rounded-full bg-gray-700 border-2 border-gray-900 flex items-center justify-center text-xs text-white">
+                                            {String.fromCharCode(64 + i)}
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="text-sm">
+                                    <div className="text-white font-semibold">Join 10,000+ Pros</div>
+                                    <div className="text-gray-500 text-xs">Getting hired at top tech companies</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right Side: Pricing */}
+                    <div className="lg:col-span-7 p-8 lg:p-12 bg-[#0f1115]">
+                        <div className="text-center mb-8">
+                            <h3 className="text-xl font-bold text-white mb-2">Choose Your Plan</h3>
+                            <p className="text-gray-400 text-sm">Cancel anytime. No hidden fees.</p>
+                        </div>
+
+                        <div className="space-y-4 mb-8">
+                            {PLANS.map((plan) => (
+                                <div
+                                    key={plan.id}
+                                    onClick={() => setSelectedPlan(plan.id)}
+                                    className={`relative p-4 rounded-xl cursor-pointer transition-all border ${selectedPlan === plan.id
+                                        ? 'border-yellow-500/50 bg-yellow-500/5'
+                                        : 'border-white/10 bg-white/5 hover:bg-white/10'
+                                        }`}
+                                >
+                                    {plan.popular && (
+                                        <div className="absolute -top-3 right-4 px-2 py-0.5 bg-yellow-500 text-black text-[10px] font-bold rounded-full uppercase tracking-wider">
+                                            Most Popular
                                         </div>
                                     )}
-                                </div>
 
-                                {/* Features */}
-                                <ul className="space-y-2 mb-6">
-                                    {plan.features.map((feature, i) => (
-                                        <li key={i} className="flex items-center gap-2 text-sm">
-                                            <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
-                                            <span>{feature}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-
-                                {/* Select indicator */}
-                                {selectedPlan === plan.id && (
-                                    <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-linkedin-500 flex items-center justify-center">
-                                        <Check className="w-4 h-4" />
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selectedPlan === plan.id
+                                                    ? 'border-yellow-500 bg-yellow-500'
+                                                    : 'border-gray-600'
+                                                }`}>
+                                                {selectedPlan === plan.id && <Check className="w-3 h-3 text-black" />}
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-white">{plan.name}</span>
+                                                    {plan.discount && (
+                                                        <span className="text-xs text-green-400 font-medium bg-green-400/10 px-1.5 py-0.5 rounded">
+                                                            {plan.discount}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="text-sm text-gray-400">
+                                                    {plan.id === 'yearly' ? 'Billed annually' : plan.id === 'monthly' ? 'Billed monthly' : 'One-time payment'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-lg font-bold text-white">₹{plan.price.toLocaleString()}</div>
+                                            <div className="text-xs text-gray-500 line-through">₹{plan.originalPrice.toLocaleString()}</div>
+                                        </div>
                                     </div>
-                                )}
+                                </div>
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={() => handlePayment(PLANS.find(p => p.id === selectedPlan))}
+                            disabled={isProcessing}
+                            className="w-full py-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl font-bold text-black text-lg hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20"
+                        >
+                            {isProcessing ? (
+                                <>
+                                    <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                                    Processing...
+                                </>
+                            ) : (
+                                <>
+                                    <Zap className="w-5 h-5 fill-black" />
+                                    Get Instant Access
+                                </>
+                            )}
+                        </button>
+
+                        <div className="mt-6 flex items-center justify-center gap-4 text-xs text-gray-500">
+                            <div className="flex items-center gap-1">
+                                <Shield className="w-3 h-3" />
+                                Secure SSL
                             </div>
-                        ))}
-                    </div>
-
-                    {/* CTA Button */}
-                    <button
-                        onClick={() => handlePayment(PLANS.find(p => p.id === selectedPlan))}
-                        disabled={isProcessing}
-                        className="w-full mt-6 py-4 bg-gradient-to-r from-linkedin-500 to-linkedin-400 rounded-xl font-bold text-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                        {isProcessing ? (
-                            <>
-                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                Processing...
-                            </>
-                        ) : (
-                            <>
-                                <Zap className="w-5 h-5" />
-                                Upgrade Now - ₹{PLANS.find(p => p.id === selectedPlan)?.price.toLocaleString()}
-                            </>
-                        )}
-                    </button>
-
-                    {/* Trust badges */}
-                    <div className="flex items-center justify-center gap-6 mt-6 text-gray-500 text-sm">
-                        <div className="flex items-center gap-2">
-                            <Shield className="w-4 h-4" />
-                            <span>Secure Payment</span>
+                            <div className="w-1 h-1 rounded-full bg-gray-700" />
+                            <div>30-Day Money Back Guarantee</div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Star className="w-4 h-4" />
-                            <span>4.9/5 Rating</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Sparkles className="w-4 h-4" />
-                            <span>7-Day Refund</span>
-                        </div>
-                    </div>
 
-                    {/* Test mode notice */}
-                    <div className="mt-6 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-center">
-                        <p className="text-sm text-yellow-400">
-                            🧪 <strong>Test Mode:</strong> Use card 4111 1111 1111 1111 with any future expiry date
-                        </p>
+                        {/* Test mode notice */}
+                        <div className="mt-4 text-center">
+                            <p className="text-xs text-yellow-500/70">
+                                🧪 Test Mode: Use card 4111 1111 1111 1111
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

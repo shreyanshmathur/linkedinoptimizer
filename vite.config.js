@@ -6,5 +6,18 @@ export default defineConfig({
     server: {
         port: 3000,
         open: true
+    },
+    optimizeDeps: {
+        include: ['pdfjs-dist', 'tesseract.js']
+    },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    pdf: ['pdfjs-dist'],
+                    ocr: ['tesseract.js']
+                }
+            }
+        }
     }
 })

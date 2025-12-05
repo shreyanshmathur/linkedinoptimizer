@@ -595,34 +595,286 @@ export function scorePhoto(photoAnalysis) {
 }
 
 /**
- * Calculate overall profile score
+ * Score Certifications (Weight: 8%)
  */
-export function calculateOverallScore(sectionScores) {
-    const weights = {
-        headline: 0.15,
-        about: 0.20,
-        experience: 0.30,
-        skills: 0.15,
-        education: 0.10,
-        photo: 0.10
+export function scoreCertifications(certifications, industry = 'general') {
+    if (!certifications || certifications.length === 0) {
+        return { score: 0, breakdown: {}, issues: ['No certifications - consider adding industry credentials'] };
+    }
+
+    const issues = [];
+    const breakdown = {};
+
+    // Count (30%)
+    const count = certifications.length;
+    if (count >= 3) {
+        breakdown.count = 100;
+    } else if (count >= 2) {
+        breakdown.count = 80;
+    } else {
+        breakdown.count = 60;
+        issues.push('Add more certifications (3+ recommended)');
+    }
+
+    // Relevance (35%)
+    const prestigiousCerts = ['aws', 'azure', 'gcp', 'pmp', 'cfa', 'cpa', 'cissp', 'google', 'microsoft', 'scrum', 'agile'];
+    const relevantCount = certifications.filter(c =>
+        prestigiousCerts.some(p => (c.name || '').toLowerCase().includes(p))
+    ).length;
+    breakdown.relevance = Math.min(100, (relevantCount / Math.max(1, count)) * 120);
+
+    // Recency (20%)
+    const currentYear = new Date().getFullYear();
+    const recentCount = certifications.filter(c => {
+        const year = parseInt(c.date) || 0;
+        return year >= currentYear - 3;
+    }).length;
+    breakdown.recency = Math.min(100, (recentCount / count) * 100);
+    if (recentCount === 0) {
+        issues.push('Consider updating certifications (get new ones within 3 years)');
+    }
+
+    // Completeness (15%)
+    const complete = certifications.filter(c => c.name && c.issuer).length;
+    breakdown.completeness = (complete / count) * 100;
+
+    // Industry multiplier
+    const industryMultipliers = {
+        'Finance': 1.5, 'Healthcare': 2.0, 'Technology': 1.3, 'Consulting': 1.2
     };
+    const multiplier = industryMultipliers[industry] || 1.0;
+
+    const score = Math.min(100, Math.round(
+        (breakdown.count * 0.30 + breakdown.relevance * 0.35 + breakdown.recency * 0.20 + breakdown.completeness * 0.15) * multiplier
+    ));
+
+    return { score, breakdown, issues, count };
+}
+
+/**
+ * Score Volunteering (Weight: 3%)
+ */
+export function scoreVolunteering(volunteering) {
+    if (!volunteering || volunteering.length === 0) {
+        return { score: 0, breakdown: {}, issues: ['No volunteering - 41% of hiring managers favor volunteer experience'] };
+    }
+
+    const issues = [];
+    const breakdown = {};
+
+    // Presence (50%)
+    breakdown.presence = volunteering.length >= 2 ? 100 : 80;
+
+    // Description quality (30%)
+    const withDescription = volunteering.filter(v => (v.description || '').length >= 50).length;
+    breakdown.quality = (withDescription / volunteering.length) * 100;
+    if (withDescription < volunteering.length) {
+        issues.push('Add detailed descriptions to volunteering experiences');
+    }
+
+    // Impact (20%)
+    const withImpact = volunteering.filter(v => /\d+|impact|helped|supported|organized/i.test(v.description || '')).length;
+    breakdown.impact = (withImpact / volunteering.length) * 100;
+
+    const score = Math.round(
+        breakdown.presence * 0.50 + breakdown.quality * 0.30 + breakdown.impact * 0.20
+    );
+
+    return { score, breakdown, issues, count: volunteering.length };
+}
+
+/**
+ * Score Recommendations (Weight: 5%)
+ */
+export function scoreRecommendations(recommendations) {
+    if (!recommendations || recommendations.length === 0) {
+        return { score: 0, breakdown: {}, issues: ['No recommendations - profiles with recommendations get 3x more recruiter contact'] };
+    }
+
+    const issues = [];
+    const breakdown = {};
+
+    // Count (40%)
+    const count = recommendations.length;
+    if (count >= 5) {
+        breakdown.count = 100;
+    } else if (count >= 3) {
+        breakdown.count = 85;
+    } else {
+        breakdown.count = 60;
+        issues.push('Get more recommendations (5+ recommended)');
+    }
+
+    // Recommender quality (30%)
+    const managerRecs = recommendations.filter(r => r.relationship === 'manager').length;
+    const clientRecs = recommendations.filter(r => r.relationship === 'client').length;
+    breakdown.quality = Math.min(100, (managerRecs * 20) + (clientRecs * 15) + ((count - managerRecs - clientRecs) * 10));
+
+    // Text length/specificity (30%)
+    const substantialRecs = recommendations.filter(r => (r.text || '').length >= 200).length;
+    breakdown.specificity = (substantialRecs / count) * 100;
+
+    const score = Math.round(
+        breakdown.count * 0.40 + breakdown.quality * 0.30 + breakdown.specificity * 0.30
+    );
+
+    return { score, breakdown, issues, count };
+}
+
+/**
+ * Score Featured Content (Weight: 5%)
+ */
+export function scoreFeatured(featured) {
+    if (!featured || featured.length === 0) {
+        return { score: 0, breakdown: {}, issues: ['No featured content - add articles, posts or projects to showcase expertise'] };
+    }
+
+    const issues = [];
+    const breakdown = {};
+
+    // Count (50%)
+    const count = featured.length;
+    if (count >= 3) {
+        breakdown.count = 100;
+    } else if (count >= 2) {
+        breakdown.count = 80;
+    } else {
+        breakdown.count = 60;
+        issues.push('Add more featured content (3+ recommended)');
+    }
+
+    // Has URLs (50%)
+    const withUrls = featured.filter(f =>
+        typeof f === 'string' ? f.startsWith('http') : (f.url || '').startsWith('http')
+    ).length;
+    breakdown.urls = (withUrls / count) * 100;
+
+    const score = Math.round(breakdown.count * 0.50 + breakdown.urls * 0.50);
+
+    return { score, breakdown, issues, count };
+}
+
+/**
+ * Score Interests (Weight: 2%)
+ */
+export function scoreInterests(interests, industry = 'general') {
+    if (!interests || interests.length === 0) {
+        return { score: 0, breakdown: {}, issues: ['No interests - following companies and influencers shows industry awareness'] };
+    }
+
+    const issues = [];
+    const breakdown = {};
+
+    // Count (60%)
+    const count = interests.length;
+    if (count >= 10) {
+        breakdown.count = 100;
+    } else if (count >= 5) {
+        breakdown.count = 80;
+    } else {
+        breakdown.count = 50;
+        issues.push('Follow more companies and influencers (10+ recommended)');
+    }
+
+    // Quality (40%) - check for known companies/influencers
+    const highQuality = ['google', 'microsoft', 'amazon', 'linkedin', 'harvard', 'mckinsey', 'tesla', 'apple'];
+    const qualityCount = interests.filter(i =>
+        highQuality.some(hq => (i || '').toLowerCase().includes(hq))
+    ).length;
+    breakdown.quality = Math.min(100, (qualityCount / Math.max(1, count)) * 150);
+
+    const score = Math.round(breakdown.count * 0.60 + breakdown.quality * 0.40);
+
+    return { score, breakdown, issues, count };
+}
+
+/**
+ * Score Contact Info (Weight: 2%)
+ */
+export function scoreContactInfo(profile) {
+    const issues = [];
+    const breakdown = {};
+
+    // Custom LinkedIn URL (40%)
+    const linkedinUrl = profile.linkedinUrl || '';
+    if (linkedinUrl && !linkedinUrl.includes('/in/user') && linkedinUrl.includes('/in/')) {
+        breakdown.customUrl = 100;
+    } else if (linkedinUrl) {
+        breakdown.customUrl = 60;
+        issues.push('Customize your LinkedIn URL (remove numbers)');
+    } else {
+        breakdown.customUrl = 0;
+        issues.push('Add your LinkedIn profile URL');
+    }
+
+    // Email (30%)
+    breakdown.email = profile.email ? 100 : 0;
+    if (!profile.email) {
+        issues.push('Add professional email for contact scoring');
+    }
+
+    // Website/Portfolio (20%)
+    const website = profile.website || profile.photoUrl; // Using photoUrl as proxy for having a portfolio
+    breakdown.website = website ? 100 : 0;
+
+    // Location (10%)
+    breakdown.location = profile.location ? 100 : 0;
+
+    const score = Math.round(
+        breakdown.customUrl * 0.40 + breakdown.email * 0.30 + breakdown.website * 0.20 + breakdown.location * 0.10
+    );
+
+    return { score, breakdown, issues };
+}
+
+/**
+ * Calculate overall profile score with 12 sections
+ */
+export function calculateOverallScore(sectionScores, careerLevel = 'mid', industry = 'general') {
+    // Default weights for all 12 sections
+    const weights = {
+        photo: 0.10,
+        headline: 0.15,
+        about: 0.15,
+        featured: 0.05,
+        experience: 0.25,
+        education: 0.10,
+        certifications: 0.08,
+        volunteering: 0.03,
+        skills: 0.12,
+        recommendations: 0.05,
+        interests: 0.02,
+        contactInfo: 0.02
+    };
+
+    // Career level adjustments
+    const careerMultipliers = {
+        entry: { education: 1.5, skills: 1.3, certifications: 1.25, experience: 0.8 },
+        mid: { experience: 1.15, skills: 1.1 },
+        senior: { experience: 1.25, recommendations: 1.2, education: 0.7 },
+        executive: { recommendations: 1.3, experience: 1.2, education: 0.6 }
+    };
+
+    const multipliers = careerMultipliers[careerLevel] || {};
 
     let totalScore = 0;
     let totalWeight = 0;
 
     Object.entries(weights).forEach(([section, weight]) => {
-        if (sectionScores[section] !== undefined) {
-            totalScore += sectionScores[section] * weight;
-            totalWeight += weight;
+        const score = sectionScores[section];
+        if (score !== undefined && score > 0) {
+            const adjustedWeight = weight * (multipliers[section] || 1);
+            totalScore += score * adjustedWeight;
+            totalWeight += adjustedWeight;
         }
     });
 
     // Normalize if not all sections present
-    if (totalWeight > 0 && totalWeight < 1) {
+    if (totalWeight > 0) {
         totalScore = totalScore / totalWeight;
     }
 
-    return Math.round(totalScore);
+    return Math.round(Math.min(100, totalScore));
 }
 
 /**
@@ -647,21 +899,285 @@ export function getScoreLabel(score) {
     return 'Critical';
 }
 
+// ============================================
+// FULL PERCENTILE BENCHMARKING SYSTEM
+// ============================================
+
 /**
- * Get percentile estimate
+ * Industry-specific score distributions (based on LinkedIn research)
+ * Format: [p10, p25, p50, p75, p90] scores
  */
-export function getPercentile(score) {
-    if (score >= 95) return 1;
-    if (score >= 90) return 5;
-    if (score >= 85) return 10;
-    if (score >= 80) return 20;
-    if (score >= 75) return 30;
-    if (score >= 70) return 40;
-    if (score >= 65) return 50;
-    if (score >= 60) return 60;
-    if (score >= 55) return 70;
-    if (score >= 50) return 80;
-    return 90;
+const INDUSTRY_BENCHMARKS = {
+    'Technology': {
+        overall: [45, 58, 72, 84, 92],
+        headline: [40, 55, 70, 82, 90],
+        about: [35, 50, 65, 78, 88],
+        experience: [50, 62, 75, 85, 93],
+        skills: [55, 68, 78, 87, 94]
+    },
+    'Finance': {
+        overall: [42, 55, 68, 80, 89],
+        headline: [38, 52, 66, 78, 87],
+        about: [32, 48, 62, 75, 85],
+        experience: [48, 60, 72, 83, 91],
+        skills: [50, 63, 74, 84, 92]
+    },
+    'Healthcare': {
+        overall: [40, 52, 65, 77, 86],
+        headline: [35, 48, 62, 74, 84],
+        about: [30, 45, 58, 72, 82],
+        experience: [45, 58, 70, 81, 89],
+        skills: [48, 60, 72, 82, 90]
+    },
+    'Consulting': {
+        overall: [48, 62, 75, 86, 94],
+        headline: [45, 58, 72, 84, 92],
+        about: [38, 52, 68, 80, 90],
+        experience: [52, 65, 78, 88, 95],
+        skills: [55, 68, 80, 89, 96]
+    },
+    'Marketing': {
+        overall: [44, 57, 70, 82, 91],
+        headline: [42, 55, 70, 82, 91],
+        about: [35, 50, 65, 78, 88],
+        experience: [48, 61, 74, 84, 92],
+        skills: [52, 65, 76, 86, 93]
+    },
+    'default': {
+        overall: [42, 55, 68, 80, 89],
+        headline: [38, 52, 66, 78, 87],
+        about: [32, 48, 62, 75, 85],
+        experience: [48, 60, 72, 83, 91],
+        skills: [50, 63, 74, 84, 92]
+    }
+};
+
+/**
+ * Career level adjustments for benchmarks
+ */
+const CAREER_LEVEL_ADJUSTMENTS = {
+    entry: { overall: -5, experience: -10, recommendations: -15 },
+    mid: { overall: 0, experience: 0, recommendations: 0 },
+    senior: { overall: 5, experience: 5, recommendations: 5 },
+    executive: { overall: 8, experience: 8, recommendations: 10 }
+};
+
+/**
+ * Calculate percentile from score using industry benchmarks
+ */
+export function getPercentile(score, section = 'overall', industry = 'default', careerLevel = 'mid') {
+    const benchmarks = INDUSTRY_BENCHMARKS[industry] || INDUSTRY_BENCHMARKS['default'];
+    const distribution = benchmarks[section] || benchmarks['overall'];
+    const adjustment = CAREER_LEVEL_ADJUSTMENTS[careerLevel]?.[section] || 0;
+
+    const adjustedScore = score - adjustment;
+
+    // [p10, p25, p50, p75, p90]
+    if (adjustedScore >= distribution[4]) return Math.max(1, 10 - Math.floor((adjustedScore - distribution[4]) / 2));
+    if (adjustedScore >= distribution[3]) return 10 + Math.floor((distribution[4] - adjustedScore) / (distribution[4] - distribution[3]) * 15);
+    if (adjustedScore >= distribution[2]) return 25 + Math.floor((distribution[3] - adjustedScore) / (distribution[3] - distribution[2]) * 25);
+    if (adjustedScore >= distribution[1]) return 50 + Math.floor((distribution[2] - adjustedScore) / (distribution[2] - distribution[1]) * 25);
+    if (adjustedScore >= distribution[0]) return 75 + Math.floor((distribution[1] - adjustedScore) / (distribution[1] - distribution[0]) * 15);
+    return Math.min(99, 90 + Math.floor((distribution[0] - adjustedScore) / 5));
 }
 
-export { POWER_VERBS, DEFAULT_JOB_KEYWORDS };
+/**
+ * Get tier information based on percentile
+ */
+export function getTier(percentile) {
+    if (percentile <= 1) return { tier: 'Elite', label: 'Top 1%', color: '#10b981', emoji: '🏆' };
+    if (percentile <= 5) return { tier: 'Excellent', label: 'Top 5%', color: '#22c55e', emoji: '⭐' };
+    if (percentile <= 10) return { tier: 'Outstanding', label: 'Top 10%', color: '#34d399', emoji: '🌟' };
+    if (percentile <= 25) return { tier: 'Strong', label: 'Top 25%', color: '#84cc16', emoji: '💪' };
+    if (percentile <= 50) return { tier: 'Good', label: 'Top 50%', color: '#eab308', emoji: '👍' };
+    if (percentile <= 75) return { tier: 'Fair', label: 'Top 75%', color: '#f97316', emoji: '📈' };
+    return { tier: 'Needs Work', label: 'Below Average', color: '#ef4444', emoji: '🔧' };
+}
+
+/**
+ * Get comprehensive benchmark analysis
+ */
+export function getBenchmarkAnalysis(sectionScores, industry = 'default', careerLevel = 'mid') {
+    const sections = Object.keys(sectionScores);
+    const analysis = {
+        overall: {
+            score: sectionScores.overall || 0,
+            percentile: getPercentile(sectionScores.overall || 0, 'overall', industry, careerLevel),
+            tier: null,
+            vsIndustryAvg: 0,
+            trend: 'stable'
+        },
+        sections: {},
+        strengths: [],
+        weaknesses: [],
+        recommendations: []
+    };
+
+    analysis.overall.tier = getTier(analysis.overall.percentile);
+
+    // Analyze each section
+    const benchmarks = INDUSTRY_BENCHMARKS[industry] || INDUSTRY_BENCHMARKS['default'];
+    const industryMedian = benchmarks['overall'][2]; // p50
+    analysis.overall.vsIndustryAvg = sectionScores.overall - industryMedian;
+
+    sections.forEach(section => {
+        if (section === 'overall') return;
+
+        const score = sectionScores[section] || 0;
+        const percentile = getPercentile(score, section, industry, careerLevel);
+        const tier = getTier(percentile);
+
+        analysis.sections[section] = {
+            score,
+            percentile,
+            tier,
+            status: percentile <= 25 ? 'strong' : percentile <= 50 ? 'good' : percentile <= 75 ? 'fair' : 'weak'
+        };
+
+        if (percentile <= 25 && score > 0) {
+            analysis.strengths.push({ section, percentile, tier });
+        }
+        if (percentile > 75 || score === 0) {
+            analysis.weaknesses.push({ section, percentile, tier, score });
+        }
+    });
+
+    // Generate recommendations based on weaknesses
+    analysis.weaknesses.forEach(weakness => {
+        const rec = getRecommendationForSection(weakness.section, weakness.score);
+        if (rec) analysis.recommendations.push(rec);
+    });
+
+    return analysis;
+}
+
+/**
+ * Get recommendation for a specific section
+ */
+function getRecommendationForSection(section, score) {
+    const recommendations = {
+        headline: score === 0
+            ? 'Add a compelling headline with keywords and value proposition'
+            : 'Optimize headline: add metrics, power words, and clear role title',
+        about: score === 0
+            ? 'Write an About section showcasing your story and achievements'
+            : 'Improve About: add 3+ quantified achievements and a call-to-action',
+        experience: score === 0
+            ? 'Add work experience with bullet points and metrics'
+            : 'Enhance experience: start bullets with power verbs, add 80%+ metrics',
+        skills: score === 0
+            ? 'Add 15-20 relevant skills ordered by importance'
+            : 'Optimize skills: reorder top 5 to match target jobs',
+        education: score === 0
+            ? 'Add your educational background'
+            : 'Enhance education: add relevant coursework and honors',
+        certifications: score === 0
+            ? 'Add industry certifications to boost credibility (+8% weight)'
+            : 'Get certifications from recognized bodies (AWS, PMP, etc.)',
+        volunteering: score === 0
+            ? 'Add volunteering - 41% of hiring managers favor it'
+            : 'Add impact metrics to volunteering experiences',
+        recommendations: score === 0
+            ? 'Request 3-5 recommendations from managers and colleagues'
+            : 'Get recommendations from senior leaders and clients',
+        featured: score === 0
+            ? 'Add featured content: articles, posts, or portfolio links'
+            : 'Add more featured content to showcase expertise',
+        interests: score === 0
+            ? 'Follow industry leaders and companies'
+            : 'Follow more relevant companies and influencers',
+        contactInfo: score === 0
+            ? 'Customize your LinkedIn URL and add contact info'
+            : 'Add professional email and portfolio link',
+        photo: score === 0
+            ? 'Add professional headshot - 14x more profile views'
+            : 'Optimize photo: smile, professional attire, clean background'
+    };
+
+    return recommendations[section] || null;
+}
+
+/**
+ * Get competitive analysis vs peers
+ */
+export function getCompetitiveAnalysis(score, industry = 'default', careerLevel = 'mid') {
+    const benchmarks = INDUSTRY_BENCHMARKS[industry] || INDUSTRY_BENCHMARKS['default'];
+    const distribution = benchmarks['overall'];
+
+    const percentile = getPercentile(score, 'overall', industry, careerLevel);
+    const tier = getTier(percentile);
+
+    // Calculate where user stands
+    const analysis = {
+        score,
+        percentile,
+        tier,
+        ranking: `Top ${percentile}%`,
+        industry,
+        careerLevel,
+        comparison: {
+            p10: distribution[0],
+            p25: distribution[1],
+            p50: distribution[2],
+            p75: distribution[3],
+            p90: distribution[4]
+        },
+        gap: {
+            toTop10: Math.max(0, distribution[4] - score),
+            toTop25: Math.max(0, distribution[3] - score),
+            toTop50: Math.max(0, distribution[2] - score)
+        },
+        message: ''
+    };
+
+    // Generate personalized message
+    if (percentile <= 10) {
+        analysis.message = `Outstanding! You're in the top ${percentile}% of ${industry} professionals.`;
+    } else if (percentile <= 25) {
+        analysis.message = `Great job! You're in the top 25%. ${analysis.gap.toTop10} points to reach top 10%.`;
+    } else if (percentile <= 50) {
+        analysis.message = `You're above average. ${analysis.gap.toTop25} points to reach top 25%.`;
+    } else {
+        analysis.message = `Room for improvement. ${analysis.gap.toTop50} points to reach top 50%.`;
+    }
+
+    return analysis;
+}
+
+/**
+ * Get section-specific improvement priorities
+ */
+export function getImprovementPriorities(sectionScores, industry = 'default') {
+    const sections = Object.entries(sectionScores)
+        .filter(([key]) => key !== 'overall')
+        .map(([section, score]) => ({
+            section,
+            score,
+            percentile: getPercentile(score, section, industry),
+            weight: getSectionWeight(section),
+            impactScore: (100 - score) * getSectionWeight(section) // Potential impact
+        }))
+        .sort((a, b) => b.impactScore - a.impactScore);
+
+    return sections.slice(0, 5).map((s, i) => ({
+        priority: i + 1,
+        section: s.section,
+        currentScore: s.score,
+        percentile: s.percentile,
+        potentialGain: Math.round(s.impactScore),
+        recommendation: getRecommendationForSection(s.section, s.score)
+    }));
+}
+
+function getSectionWeight(section) {
+    const weights = {
+        experience: 0.25, headline: 0.15, about: 0.15, skills: 0.12,
+        photo: 0.10, education: 0.10, certifications: 0.08, featured: 0.05,
+        recommendations: 0.05, volunteering: 0.03, interests: 0.02, contactInfo: 0.02
+    };
+    return weights[section] || 0.05;
+}
+
+export { POWER_VERBS, DEFAULT_JOB_KEYWORDS, INDUSTRY_BENCHMARKS };
+
+

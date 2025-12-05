@@ -8,9 +8,12 @@ export function useAuth() {
 
 // Usage limits for free tier
 const FREE_TIER_LIMITS = {
-    analyses: 3,
-    exports: 3
+    analyses: 2,
+    exports: 1
 };
+
+// Admin email - gets unlimited access
+const ADMIN_EMAIL = 'shreyanshmathur12@gmail.com';
 
 // Demo mode when Firebase is not configured
 const DEMO_MODE = !import.meta.env.VITE_FIREBASE_API_KEY ||
@@ -149,20 +152,21 @@ export function AuthProvider({ children }) {
 
     // Check if user is admin
     const isAdmin = () => {
-        const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'shreyanshmathur12@gmail.com';
-        return user?.email === adminEmail;
+        return user?.email === ADMIN_EMAIL;
     };
 
-    // Check if user can analyze (within limits or has subscription)
+    // Check if user can analyze (within limits or has subscription or is admin)
     const canAnalyze = () => {
         if (!userData) return false;
+        if (isAdmin()) return true; // Admin has unlimited access
         if (userData.subscription !== 'free') return true;
         return userData.usage.analysesCount < FREE_TIER_LIMITS.analyses;
     };
 
-    // Check if user can export (within limits or has subscription)
+    // Check if user can export (within limits or has subscription or is admin)
     const canExport = () => {
         if (!userData) return false;
+        if (isAdmin()) return true; // Admin has unlimited access
         if (userData.subscription !== 'free') return true;
         return userData.usage.exportsCount < FREE_TIER_LIMITS.exports;
     };
@@ -261,6 +265,7 @@ export function AuthProvider({ children }) {
     // Get remaining uses
     const getRemainingUses = () => {
         if (!userData) return { analyses: 0, exports: 0 };
+        if (isAdmin()) return { analyses: Infinity, exports: Infinity }; // Admin unlimited
         if (userData.subscription !== 'free') return { analyses: Infinity, exports: Infinity };
         return {
             analyses: Math.max(0, FREE_TIER_LIMITS.analyses - (userData.usage?.analysesCount || 0)),
